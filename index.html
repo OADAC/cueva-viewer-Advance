@@ -1,624 +1,477 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CUEVA - Sistema de Trazabilidad</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #1B2951 0%, #334155 100%);
-            min-height: 100vh;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .container {
-            max-width: 500px;
-            width: 100%;
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-            animation: slideIn 0.5s ease-out;
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #1B2951 0%, #00D4AA 100%);
-            color: white;
-            padding: 30px 20px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: pulse 3s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.3; }
-            50% { transform: scale(1.1); opacity: 0.5; }
-        }
+{/* Editor de Fabricación */}
+      {showFabricacionEditor && (
+        <div className="bg-white rounded-2xl p-8 mb-8 shadow-xl border-2 border-orange-200">
+          <h2 className="text-2xl font-black text-gray-900 mb-4 flex items-center gap-3">
+            <Edit2 className="text-orange-600" size={28} />
+            Asignar Fabricación Diferente
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Selecciona las piezas que pertenecen a otra echada de hormigón y asígnales un número de fabricación diferente.
+          </p>
+          
+          <div className="mb-6">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Nuevo Número de Fabricación
+            </label>
+            <input
+              type="text"
+              value={newFabricacion}
+              onChange={(e) => setNewFabricacion(e.target.value.toUpperCase())}
+              className="w-full md:w-64 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-orange-500 focus:outline-none font-semibold"
+              placeholder="Ej: F2, F3, F4..."
+            />
+          </div>
 
-        .header-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 10px;
-            position: relative;
-            z-index: 1;
-        }
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 mb-6">
+            {pieces.map(piece => (
+              <button
+                key={piece.id}
+                onClick={() => togglePieceSelection(piece.id)}
+                className={`p-4 rounded-xl border-2 font-bold transition-all ${
+                  selectedPieces.includes(piece.id)
+                    ? 'bg-orange-500 border-orange-600 text-white'
+                    : 'bg-white border-gray-300 text-gray-700 hover:border-orange-300'
+                }`}
+              >
+                <div className="text-sm">P{piece.id}</div>
+                <div className="text-xs mt-1">{piece.numFabricacion}</div>
+              </button>
+            ))}
+          </div>
 
-        .logo-symbol {
-            width: 50px;
-            height: 50px;
-            position: relative;
-        }
+          <div className="flex gap-4">
+            <button
+              onClick={applyFabricacionChange}
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-bold transition-all"
+            >
+              Aplicar Cambios ({selectedPieces.length} piezas)
+            </button>
+            <button
+              onClick={() => {
+                setShowFabricacionEditor(false);
+                setSelectedPieces([]);
+                setNewFabricacion('');
+              }}
+              className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold hover:bg-gray-100 transition-all"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
-        .logo-circle {
-            width: 50px;
-            height: 50px;
-            border: 2.5px solid white;
-            border-radius: 50%;
-            position: absolute;
-            animation: logoMorph 6s ease-in-out infinite;
-        }
+      {/* Panel de Configuración */}
+      {showConfig && (
+        <div className="bg-white rounded-2xl p-8 mb-8 shadow-xl border-2 border-purple-200">
+          <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3">
+            <Settings className="text-purple-600" size={28} />
+            Configuración del Proyecto
+          </h2>
+          
+          {/* Datos del Generador */}
+          <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-black text-purple-900 mb-4 flex items-center gap-2">
+              <User size={20} />
+              Datos del Generador
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Nombre Completo *
+                </label>
+                <input
+                  type="text"
+                  value={config.generadoPor}
+                  onChange={(e) => setConfig({...config, generadoPor: e.target.value})}
+                  className="w-full px-4 py-3 border-2 border-purple-300 rounded-xl focus:border-purple-500 focus:outline-none font-semibold"
+                  placeholder="Ej: Juan Pérez"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Cargo *
+                </label>
+                <input
+                  type="text"
+                  value={config.cargo}
+                  onChange={(e) => setConfig({...config, cargo: e.target.value})}
+                  className="w-full px-4 py-3 border-2 border-purple-300 rounded-xl focus:border-purple-500 focus:outline-none font-semibold"
+                  placeholder="Ej: Supervisor"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Instalación *
+                </label>
+                <input
+                  type="text"
+                  value={config.instalacion}
+                  onChange={(e) => setConfig({...config, instalacion: e.target.value})}
+                  className="w-full px-4 py-3 border-2 border-purple-300 rounded-xl focus:border-purple-500 focus:outline-none font-semibold"
+                  placeholder="Ej: Planta Mallorca"
+                  required
+                />
+              </div>
+            </div>
+          </div>
 
-        @keyframes logoMorph {
-            0%, 100% { border-radius: 50%; }
-            33% { border-radius: 25% 75%; }
-            66% { border-radius: 75% 25%; }
-        }
-
-        .logo-element {
-            position: absolute;
-            background: transparent;
-            animation: logoFloat 8s ease-in-out infinite;
-        }
-
-        @keyframes logoFloat {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(2px, -2px) scale(1.1); }
-            50% { transform: translate(-2px, 2px) scale(0.9); }
-            75% { transform: translate(1px, 1px) scale(1.05); }
-        }
-        
-        .header h1 {
-            font-size: 36px;
-            font-weight: 900;
-            letter-spacing: 2px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .header p {
-            font-size: 13px;
-            opacity: 0.95;
-            font-weight: 600;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .content {
-            padding: 20px;
-        }
-        
-        .highlight-box {
-            background: linear-gradient(135deg, #1B2951 0%, #2d3e63 100%);
-            color: white;
-            padding: 18px;
-            border-radius: 12px;
-            text-align: center;
-            font-size: 22px;
-            font-weight: 900;
-            margin-bottom: 20px;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(27, 41, 81, 0.3);
-        }
-        
-        .section {
-            background: #F1F5F9;
-            border-radius: 15px;
-            padding: 18px;
-            margin-bottom: 15px;
-            border: 2px solid #E2E8F0;
-        }
-        
-        .section-title {
-            font-size: 11px;
-            font-weight: 800;
-            color: #64748B;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #00D4AA;
-        }
-        
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #CBD5E1;
-            font-size: 14px;
-        }
-        
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        
-        .label {
-            font-weight: 700;
-            color: #475569;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .label::before {
-            content: '●';
-            color: #00D4AA;
-            font-size: 10px;
-        }
-        
-        .value {
-            font-weight: 700;
-            color: #1B2951;
-            font-family: 'Courier New', monospace;
-            text-align: right;
-            word-break: break-word;
-            max-width: 60%;
-        }
-        
-        .uuid-box {
-            background: white;
-            border: 2px dashed #00D4AA;
-            border-radius: 10px;
-            padding: 12px;
-            margin-top: 10px;
-        }
-        
-        .uuid-value {
-            font-size: 10px;
-            color: #1B2951;
-            font-family: 'Courier New', monospace;
-            word-break: break-all;
-            font-weight: 700;
-            text-align: center;
-        }
-
-        .doc-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .doc-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
-            color: white;
-            padding: 14px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
-            border: none;
-            cursor: pointer;
-        }
-
-        .doc-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
-        }
-
-        .doc-button.pdf {
-            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        }
-
-        .doc-button.pdf:hover {
-            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
-        }
-
-        .doc-button.image {
-            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-        }
-
-        .doc-button.image:hover {
-            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
-        }
-
-        .doc-icon {
-            font-size: 18px;
-        }
-        
-        .maps-button {
-            display: block;
-            width: 100%;
-            background: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
-            color: white;
-            padding: 16px;
-            border-radius: 12px;
-            text-align: center;
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 16px;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3);
-        }
-        
-        .maps-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 212, 170, 0.4);
-        }
-        
-        .maps-button::before {
-            content: '📍 ';
-            font-size: 18px;
-        }
-        
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #64748B;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        
-        .footer-logo {
-            font-weight: 900;
-            color: #1B2951;
-            font-size: 13px;
-            letter-spacing: 2px;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: white;
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .warning {
-            background: #FEF3C7;
-            border-left: 4px solid #F59E0B;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 8px;
-        }
-
-        .warning-title {
-            font-weight: 800;
-            color: #92400E;
-            margin-bottom: 8px;
-        }
-
-        .warning-text {
-            font-size: 13px;
-            color: #78350F;
-            line-height: 1.5;
-        }
-        
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 28px;
-            }
+          {/* Datos del Proyecto */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Proyecto
+              </label>
+              <input
+                type="text"
+                value={config.proyecto}
+                onChange={(e) => setConfig({...config, proyecto: e.target.value})}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none font-semibold"
+                placeholder="Ej: Viv4A"
+              />
+            </div>
             
-            .highlight-box {
-                font-size: 18px;
-            }
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Tipo
+              </label>
+              <input
+                type="text"
+                value={config.tipo}
+                onChange={(e) => setConfig({...config, tipo: e.target.value})}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none font-semibold"
+                placeholder="Ej: TipoB"
+              />
+            </div>
             
-            .info-row {
-                font-size: 13px;
-            }
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Ubicación/Lote
+              </label>
+              <input
+                type="text"
+                value={config.ubicacion}
+                onChange={(e) => setConfig({...config, ubicacion: e.target.value})}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none font-semibold"
+                placeholder="Ej: J10"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Nº Piezas
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="500"
+                value={config.numPiezas}
+                onChange={(e) => setConfig({...config, numPiezas: parseInt(e.target.value) || 10})}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none font-semibold"
+              />
+            </div>
 
-            .value {
-                max-width: 50%;
-                font-size: 12px;
-            }
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Nº Fabricación Base
+              </label>
+              <input
+                type="text"
+                value={config.fabricacionBase}
+                onChange={(e) => setConfig({...config, fabricacionBase: e.target.value.toUpperCase()})}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none font-semibold"
+                placeholder="Ej: F1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Todas las piezas tendrán este número por defecto
+              </p>
+            </div>
 
-            .doc-button {
-                font-size: 13px;
-                padding: 12px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container" id="app">
-        <div class="loading">Cargando información...</div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Tamaño QR (cm)
+              </label>
+              <select
+                value={config.tamanoQR}
+                onChange={(e) => setConfig({...config, tamanoQR: parseFloat(e.target.value)})}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none font-semibold"
+              >
+                <option value="2">2 cm</option>
+                <option value="2.5">2.5 cm</option>
+                <option value="3">3 cm</option>
+                <option value="4">4 cm</option>
+                <option value="5">5 cm</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2 lg:col-span-3">
+              <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                <MapPin size={18} className="text-red-500" />
+                URL Google Maps (Manual o Automática)
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="url"
+                  value={config.mapsUrl}
+                  onChange={(e) => setConfig({...config, mapsUrl: e.target.value})}
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none font-semibold"
+                  placeholder="Pega aquí el enlace de Google Maps o usa el botón"
+                />
+                <button
+                  onClick={getCurrentLocation}
+                  disabled={gettingLocation}
+                  className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+                    gettingLocation 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                >
+                  <Navigation size={18} />
+                  {gettingLocation ? 'Obteniendo...' : 'Auto'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                💡 Abre Google Maps, busca la ubicación, haz clic en "Compartir" y pega el enlace aquí
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex gap-4 mt-6">
+            <button
+              onClick={applyConfig}
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold transition-all"
+            >
+              Aplicar Configuración
+            </button>
+            <button
+              onClick={() => setShowConfig(false)}
+              className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold hover:bg-gray-100 transition-all"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="text-gray-500 text-sm font-semibold mb-1">Total</div>
+          <div className="text-4xl font-black text-blue-900">{pieces.length}</div>
+        </div>
+        <div className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="text-gray-500 text-sm font-semibold mb-1">Descargados</div>
+          <div className="text-4xl font-black text-green-600">
+            {pieces.filter(p => p.downloaded).length}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="text-gray-500 text-sm font-semibold mb-1">Pendientes</div>
+          <div className="text-4xl font-black text-orange-600">
+            {pieces.filter(p => !p.downloaded).length}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="text-gray-500 text-sm font-semibold mb-1">QR</div>
+          <div className="text-4xl font-black text-purple-600">{config.tamanoQR}cm</div>
+        </div>
+      </div>
+
+      {/* Grid de QR Codes */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+        {pieces.map(piece => (
+          <div
+            key={piece.id}
+            className={`bg-white rounded-2xl shadow-lg overflow-hidden transition-all hover:shadow-2xl ${
+              piece.downloaded ? 'ring-4 ring-green-400' : ''
+            } ${selectedPieces.includes(piece.id) ? 'ring-4 ring-orange-400' : ''}`}
+          >
+            <div className="bg-gradient-to-r from-blue-900 to-blue-800 p-4 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-black">{piece.nombre}</h3>
+                {piece.downloaded && (
+                  <Check size={16} className="bg-green-400 rounded-full p-1" />
+                )}
+              </div>
+              <div className="text-xs space-y-1 opacity-90">
+                <div className="bg-white/20 rounded px-2 py-1 font-black text-center mb-2">
+                  {piece.numFabricacion}
+                </div>
+                <div><span className="font-bold">Proyecto:</span> {piece.proyecto}</div>
+                <div><span className="font-bold">Tipo:</span> {piece.tipo}</div>
+                <div className="flex items-center gap-1">
+                  <Clock size={10} />
+                  <span className="font-mono text-[10px]">{piece.fechaGeneracion} {piece.horaGeneracion}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <div className="bg-white rounded-lg p-2 border-4 border-gray-200 mb-3 flex items-center justify-center aspect-square">
+                <canvas
+                  ref={(el) => {
+                    if (el) canvasRefs.current[piece.id] = el;
+                  }}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              <div className="flex gap-2 mb-2">
+                <button
+                  onClick={() => downloadQR(piece)}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                >
+                  <Download size={16} />
+                  Descargar
+                </button>
+                <button
+                  onClick={() => regenerateUUID(piece.id)}
+                  className="bg-gray-200 hover:bg-gray-300 px-3 py-2.5 rounded-lg"
+                  title="Regenerar"
+                >
+                  <RefreshCw size={16} />
+                </button>
+              </div>
+
+              <button
+                onClick={() => printQRLabel(piece)}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+              >
+                <Printer size={16} />
+                Imprimir
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Info */}
+      <div className="mt-8 bg-blue-50 border-l-4 border-blue-600 rounded-lg p-6">
+        <h3 className="text-lg font-bold text-blue-900 mb-3">ℹ️ Información Importante</h3>
+        <ul className="space-y-2 text-sm text-blue-800">
+          <li>✅ El QR enlaza a tu visor web en GitHub Pages</li>
+          <li>✅ Logo CUEVA del brandbook integrado en el centro del QR</li>
+          <li>✅ Al escanear, se abrirá una página con toda la información de la pieza</li>
+          <li>✅ Sistema de fabricación flexible: asigna F1 por defecto, luego edita piezas específicas</li>
+          <li>✅ Descarga A4: Genera hojas listas para imprimir con 6 QR por página</li>
+          <li>✅ Los QR son siempre cuadrados y mantienen la proporción perfecta</li>
+          <li>🌐 Visor público en: https://oadac.github.io/cueva-viewer/</li>
+        </ul>
+      </div>
     </div>
+  );
+};
 
-    <script>
-        function getParams() {
-            const params = new URLSearchParams(window.location.search);
-            return {
-                proyecto: params.get('p') || '',
-                tipo: params.get('t') || '',
-                pieza: params.get('n') || '',
-                fabricacion: params.get('f') || '',
-                ubicacion: params.get('u') || '',
-                posicionamiento: params.get('pos') || '',
-                uuid: params.get('uuid') || '',
-                fecha: params.get('fecha') || '',
-                hora: params.get('hora') || '',
-                generadoPor: params.get('gen') || '',
-                cargo: params.get('cargo') || '',
-                instalacion: params.get('inst') || '',
-                mapsUrl: params.get('maps') || '',
-                imagenGeneral: params.get('imgGen') || '',
-                imagenDetalle: params.get('imgDet') || '',
-                pdfMontaje: params.get('pdf') || ''
-            };
-        }
+// ============= COMPONENTE PRINCIPAL =============
+const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState('');
+  const [activeTab, setActiveTab] = useState<'piezas' | 'operarios' | 'maquinaria' | 'mapa'>('piezas');
+  
+  const [globalPieces, setGlobalPieces] = useState<Piece[]>([]);
+  const [globalOperarios, setGlobalOperarios] = useState<Operario[]>([]);
+  const [globalMaquinarias, setGlobalMaquinarias] = useState<Maquinaria[]>([]);
 
-        function renderData() {
-            const data = getParams();
-            
-            // Si NO hay parámetros en absoluto, mostrar página de inicio
-            if (!window.location.search || window.location.search === '?') {
-                document.getElementById('app').innerHTML = `
-                    <div class="header">
-                        <div class="header-logo">
-                            <div class="logo-symbol">
-                                <div class="logo-circle"></div>
-                                <svg width="50" height="50" viewBox="0 0 80 80" style="position: absolute; top: 0; left: 0;">
-                                    <path d="M 15,15 L 18,13 L 21,15 L 21,19 L 18,21 L 15,19 Z" fill="none" stroke="#00D4AA" stroke-width="1.5"/>
-                                    <path d="M 59,15 L 62,13 L 65,15 L 65,19 L 62,21 L 59,19 Z" fill="none" stroke="#FF6B4A" stroke-width="1.5"/>
-                                    <rect x="28" y="28" width="12" height="12" fill="none" stroke="#0EA5E9" stroke-width="1.5"/>
-                                    <rect x="45" y="45" width="15" height="7" fill="none" stroke="#F59E0B" stroke-width="1.5"/>
-                                    <rect x="15" y="60" width="6" height="6" fill="none" stroke="#00D4AA" stroke-width="1.5"/>
-                                    <path d="M 59,60 L 62,58 L 65,60 L 65,64 L 62,66 L 59,64 Z" fill="none" stroke="#FF6B4A" stroke-width="1.5"/>
-                                </svg>
-                            </div>
-                            <h1>CUEVA</h1>
-                        </div>
-                        <p>Sistema de Trazabilidad</p>
-                    </div>
-                    <div class="content">
-                        <div class="highlight-box">
-                            Visor de Elementos Prefabricados
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Bienvenido</div>
-                            <p style="text-align: center; padding: 20px; line-height: 1.6; color: #475569;">
-                                Este es el visor de códigos QR del sistema CUEVA.<br><br>
-                                <strong>Para ver información de una pieza, escanea su código QR.</strong>
-                            </p>
-                        </div>
-                    </div>
-                    <div class="footer">
-                        <div class="footer-logo">CUEVA</div>
-                        <div>Sistema Universal de Trazabilidad © 2025</div>
-                    </div>
-                `;
-                return;
-            }
+  const handleLogin = (email: string) => {
+    setIsAuthenticated(true);
+    setCurrentUser(email);
+  };
 
-            // Si hay parámetros pero están vacíos o incompletos
-            if (!data.proyecto || !data.pieza || !data.uuid) {
-                document.getElementById('app').innerHTML = `
-                    <div class="header">
-                        <div class="header-logo">
-                            <div class="logo-symbol">
-                                <div class="logo-circle"></div>
-                                <svg width="50" height="50" viewBox="0 0 80 80" style="position: absolute; top: 0; left: 0;">
-                                    <path d="M 15,15 L 18,13 L 21,15 L 21,19 L 18,21 L 15,19 Z" fill="none" stroke="#00D4AA" stroke-width="1.5"/>
-                                    <path d="M 59,15 L 62,13 L 65,15 L 65,19 L 62,21 L 59,19 Z" fill="none" stroke="#FF6B4A" stroke-width="1.5"/>
-                                    <rect x="28" y="28" width="12" height="12" fill="none" stroke="#0EA5E9" stroke-width="1.5"/>
-                                    <rect x="45" y="45" width="15" height="7" fill="none" stroke="#F59E0B" stroke-width="1.5"/>
-                                    <rect x="15" y="60" width="6" height="6" fill="none" stroke="#00D4AA" stroke-width="1.5"/>
-                                    <path d="M 59,60 L 62,58 L 65,60 L 65,64 L 62,66 L 59,64 Z" fill="none" stroke="#FF6B4A" stroke-width="1.5"/>
-                                </svg>
-                            </div>
-                            <h1>CUEVA</h1>
-                        </div>
-                        <p>Sistema de Trazabilidad</p>
-                    </div>
-                    <div class="content">
-                        <div class="warning">
-                            <div class="warning-title">⚠️ Código QR Antiguo o Inválido</div>
-                            <div class="warning-text">
-                                Este código QR puede ser de una versión anterior del sistema o contiene datos incompletos.<br><br>
-                                <strong>Solución:</strong> Genera nuevos códigos QR desde la aplicación CUEVA QR Generator.<br><br>
-                                <strong>UUID detectado:</strong> ${data.uuid || 'No disponible'}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="footer">
-                        <div class="footer-logo">CUEVA</div>
-                        <div>Sistema Universal de Trazabilidad © 2025</div>
-                    </div>
-                `;
-                return;
-            }
+  const handleLogout = () => {
+    if (confirm('¿Estás seguro de cerrar sesión?')) {
+      setIsAuthenticated(false);
+      setCurrentUser('');
+      setActiveTab('piezas');
+    }
+  };
 
-            // Validar y limpiar URL de Maps
-            const mapsButton = data.mapsUrl && data.mapsUrl.includes('http')
-                ? `<a href="${data.mapsUrl}" class="maps-button" target="_blank" rel="noopener noreferrer">Ver Ubicación en Google Maps</a>` 
-                : '';
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
-            // Crear sección de documentación solo si hay al menos un documento
-            const hasDocuments = data.imagenGeneral || data.imagenDetalle || data.pdfMontaje;
-            
-            let documentationSection = '';
-            if (hasDocuments) {
-                let docButtons = '';
-                
-                if (data.imagenGeneral && data.imagenGeneral.includes('http')) {
-                    docButtons += `
-                        <a href="${data.imagenGeneral}" class="doc-button image" target="_blank" rel="noopener noreferrer">
-                            <span class="doc-icon">🖼️</span>
-                            <span>Ver Imagen General</span>
-                        </a>
-                    `;
-                }
-                
-                if (data.imagenDetalle && data.imagenDetalle.includes('http')) {
-                    docButtons += `
-                        <a href="${data.imagenDetalle}" class="doc-button image" target="_blank" rel="noopener noreferrer">
-                            <span class="doc-icon">🔍</span>
-                            <span>Ver Imagen Detalle</span>
-                        </a>
-                    `;
-                }
-                
-                if (data.pdfMontaje && data.pdfMontaje.includes('http')) {
-                    docButtons += `
-                        <a href="${data.pdfMontaje}" class="doc-button pdf" target="_blank" rel="noopener noreferrer">
-                            <span class="doc-icon">📄</span>
-                            <span>Abrir PDF de Montaje</span>
-                        </a>
-                    `;
-                }
-                
-                if (docButtons) {
-                    documentationSection = `
-                        <div class="section">
-                            <div class="section-title">Documentación Técnica</div>
-                            <div class="doc-grid">
-                                ${docButtons}
-                            </div>
-                        </div>
-                    `;
-                }
-            }
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="bg-gradient-to-r from-blue-900 via-purple-900 to-blue-900 shadow-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-8">
+              <div>
+                <h1 className="text-3xl font-black text-white">CUEVA QR Generator Pro</h1>
+                <p className="text-blue-200 text-sm">Sistema de Trazabilidad Completo</p>
+              </div>
+              
+              <div className="flex bg-white/10 rounded-xl p-1 gap-1">
+                <button
+                  onClick={() => setActiveTab('piezas')}
+                  className={`px-4 py-2.5 rounded-lg font-bold transition-all ${
+                    activeTab === 'piezas' ? 'bg-white text-blue-900 shadow-lg' : 'text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Package size={18} className="inline mr-2" />
+                  Piezas
+                </button>
+                <button
+                  onClick={() => setActiveTab('operarios')}
+                  className={`px-4 py-2.5 rounded-lg font-bold transition-all ${
+                    activeTab === 'operarios' ? 'bg-white text-purple-900 shadow-lg' : 'text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Users size={18} className="inline mr-2" />
+                  Operarios
+                </button>
+                <button
+                  onClick={() => setActiveTab('maquinaria')}
+                  className={`px-4 py-2.5 rounded-lg font-bold transition-all ${
+                    activeTab === 'maquinaria' ? 'bg-white text-orange-900 shadow-lg' : 'text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Truck size={18} className="inline mr-2" />
+                  Maquinaria
+                </button>
+                <button
+                  onClick={() => setActiveTab('mapa')}
+                  className={`px-4 py-2.5 rounded-lg font-bold transition-all ${
+                    activeTab === 'mapa' ? 'bg-white text-green-900 shadow-lg' : 'text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Map size={18} className="inline mr-2" />
+                  Mapa
+                </button>
+              </div>
+            </div>
 
-            // Renderizar datos completos
-            document.getElementById('app').innerHTML = `
-                <div class="header">
-                    <div class="header-logo">
-                        <div class="logo-symbol">
-                            <div class="logo-circle"></div>
-                            <svg width="50" height="50" viewBox="0 0 80 80" style="position: absolute; top: 0; left: 0;">
-                                <path d="M 15,15 L 18,13 L 21,15 L 21,19 L 18,21 L 15,19 Z" fill="none" stroke="#00D4AA" stroke-width="1.5" class="logo-element" style="animation-delay: -1s;"/>
-                                <path d="M 59,15 L 62,13 L 65,15 L 65,19 L 62,21 L 59,19 Z" fill="none" stroke="#FF6B4A" stroke-width="1.5" class="logo-element" style="animation-delay: -2s;"/>
-                                <rect x="28" y="28" width="12" height="12" fill="none" stroke="#0EA5E9" stroke-width="1.5" class="logo-element" style="animation-delay: -3s;"/>
-                                <rect x="45" y="45" width="15" height="7" fill="none" stroke="#F59E0B" stroke-width="1.5" class="logo-element" style="animation-delay: -4s;"/>
-                                <rect x="15" y="60" width="6" height="6" fill="none" stroke="#00D4AA" stroke-width="1.5" class="logo-element" style="animation-delay: -5s;"/>
-                                <path d="M 59,60 L 62,58 L 65,60 L 65,64 L 62,66 L 59,64 Z" fill="none" stroke="#FF6B4A" stroke-width="1.5" class="logo-element" style="animation-delay: -6s;"/>
-                            </svg>
-                        </div>
-                        <h1>CUEVA</h1>
-                    </div>
-                    <p>Sistema de Trazabilidad</p>
-                </div>
-                
-                <div class="content">
-                    <div class="highlight-box">
-                        ${data.proyecto} - Pieza ${data.pieza}
-                    </div>
-                    
-                    <div class="section">
-                        <div class="section-title">Información del Elemento</div>
-                        <div class="info-row">
-                            <span class="label">Proyecto</span>
-                            <span class="value">${data.proyecto}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Tipo</span>
-                            <span class="value">${data.tipo}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Pieza</span>
-                            <span class="value">${data.pieza}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Fabricación</span>
-                            <span class="value">${data.fabricacion}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Ubicación/Lote</span>
-                            <span class="value">${data.ubicacion}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Posicionamiento</span>
-                            <span class="value">${data.posicionamiento}</span>
-                        </div>
-                    </div>
-                    
-                    ${documentationSection}
-                    
-                    <div class="section">
-                        <div class="section-title">Trazabilidad</div>
-                        <div class="info-row">
-                            <span class="label">Fecha Generación</span>
-                            <span class="value">${data.fecha}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Hora Generación</span>
-                            <span class="value">${data.hora}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Generado Por</span>
-                            <span class="value">${data.generadoPor}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Cargo</span>
-                            <span class="value">${data.cargo}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Instalación</span>
-                            <span class="value">${data.instalacion}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="section">
-                        <div class="section-title">Identificador Único</div>
-                        <div class="uuid-box">
-                            <div class="uuid-value">${data.uuid}</div>
-                        </div>
-                    </div>
-                    
-                    ${mapsButton}
-                </div>
-                
-                <div class="footer">
-                    <div class="footer-logo">CUEVA</div>
-                    <div>Sistema Universal de Trazabilidad © 2025</div>
-                </div>
-            `;
-        }
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-white font-bold text-sm">{currentUser}</div>
+                <div className="text-blue-200 text-xs">Usuario autenticado</div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all"
+              >
+                <LogOut size={18} />
+                Salir
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        renderData();
-    </script>
-</body>
-</html>
+      <div className="p-6">
+        {activeTab === 'piezas' && <PiezasManager userName={currentUser} onDataChange={setGlobalPieces} />}
+        {activeTab === 'operarios' && <OperariosManager userName={currentUser} onDataChange={setGlobalOperarios} />}
+        {activeTab === 'maquinaria' && <MaquinariaManager userName={currentUser} onDataChange={setGlobalMaquinarias} />}
+        {activeTab === 'mapa' && (
+          <MapaGlobal 
+            pieces={globalPieces}
+            operarios={globalOperarios}
+            maquinarias={globalMaquinarias}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default App;
